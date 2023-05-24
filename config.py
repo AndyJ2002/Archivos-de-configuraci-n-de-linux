@@ -1,15 +1,16 @@
-from libqtile import hook, layout
-from libqtile.config import Key, Group
+from libqtile import hook
+from libqtile.config import Key, Group, Match
 from libqtile.command import lazy
-from libqtile.widget import TextBox
-from libqtile import bar
+from libqtile import layout, bar
 import os
 
 # Definir variables de colores
 colors = {
     'foreground': '#ffffff',
     'background': '#000000',
-    'highlight': '#ff0000'
+    'highlight': '#ff0000',
+    'blue': '#0000ff',
+    'green': '#00ff00',
 }
 
 # Definir teclas
@@ -20,11 +21,11 @@ keys = [
     Key(['mod4'], 'h', lazy.layout.left()),
     Key(['mod4'], 'l', lazy.layout.right()),
     
-    # Abrir terminal
+    # Abrir terminal (Kitty)
     Key(['mod4'], 'Return', lazy.spawn('kitty')),
     
     # Abrir el menú Rofi
-    Key(['mod4'], 'm', lazy.spawn('rofi -show drun')),
+    Key(['mod4'], 'r', lazy.spawn('rofi -show drun')),
     
     # Cambiar el fondo de pantalla y transparencia
     Key(['mod4'], 'b', lazy.spawn('nitrogen --set-zoom-fill --random ~/Pictures/Wallpapers')),
@@ -40,7 +41,7 @@ groups = [
     Group('5', label='5'),
 ]
 
-# Estilo de la barra
+# Estilo de la barra y widgets
 widget_defaults = dict(
     font='Arial',
     fontsize=12,
@@ -48,6 +49,8 @@ widget_defaults = dict(
     background=colors['background'],
     foreground=colors['foreground'],
 )
+widget_defaults_kitty = widget_defaults.copy()
+widget_defaults_kitty.update(fontsize=14, foreground=colors['blue'])
 
 extension_defaults = widget_defaults.copy()
 
@@ -55,7 +58,16 @@ extension_defaults = widget_defaults.copy()
 screens = [
     bar.Bar(
         [
-            TextBox(text='Qtile', name='qtile-logo'),
+            # Botón para iniciar Rofi
+            widget.TextBox(
+                text='',
+                foreground=colors['foreground'],
+                background=colors['background'],
+                fontsize=18,
+                padding=0,
+                mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn('rofi -show drun')}
+            ),
+            widget.TextBox(text='Qtile', name='qtile-logo', fontsize=18, foreground=colors['green']),
         ],
         20,  # Tamaño de la barra
         background=colors['background'],
@@ -72,10 +84,7 @@ def autostart():
 # Reglas de ventanas
 def init_layout():
     return [
-        layout.Rule(
-            Match(wm_class='kitty'),  # Aplicar regla a la terminal kitty
-            float=True,
-        ),
+        Match(wm_class='kitty'),  # Aplicar regla a la terminal kitty
     ]
 
 # Configuración de Qtile
@@ -89,6 +98,8 @@ config = {
     'floating_layout': layout.Floating(float_rules=init_layout()),
 }
 
-# Iniciar Qtile
-def main(qtile):
-    qtile.cmd_launch()
+# Iniciar
+from libqtile import manager
+
+if __name__ == '__main__':
+    manager.init(**config)
